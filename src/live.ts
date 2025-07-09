@@ -68,11 +68,11 @@ async function handleWebSocketMessage(
 }
 
 /**
-   Live class encapsulates the configuration for live interaction with the
-   Generative Language API. It embeds ApiClient for general API settings.
+ Live class encapsulates the configuration for live interaction with the
+ Generative Language API. It embeds ApiClient for general API settings.
 
-   @experimental
-  */
+ @experimental
+ */
 export class Live {
   public readonly music: LiveMusic;
 
@@ -89,47 +89,47 @@ export class Live {
   }
 
   /**
-     Establishes a connection to the specified model with the given
-     configuration and returns a Session object representing that connection.
+   Establishes a connection to the specified model with the given
+   configuration and returns a Session object representing that connection.
 
-     @experimental Built-in MCP support is an experimental feature, may change in
-     future versions.
+   @experimental Built-in MCP support is an experimental feature, may change in
+    future versions.
 
-     @remarks
+   @remarks
 
-     @param params - The parameters for establishing a connection to the model.
-     @return A live session.
+   @param params - The parameters for establishing a connection to the model.
+   @return A live session.
 
-     @example
-     ```ts
-     let model: string;
-     if (GOOGLE_GENAI_USE_VERTEXAI) {
-       model = 'gemini-2.0-flash-live-preview-04-09';
-     } else {
-       model = 'gemini-2.0-flash-live-001';
-     }
-     const session = await ai.live.connect({
-       model: model,
-       config: {
-         responseModalities: [Modality.AUDIO],
-       },
-       callbacks: {
-         onopen: () => {
-           console.log('Connected to the socket.');
-         },
-         onmessage: (e: MessageEvent) => {
-           console.log('Received message from the server: %s\n', debug(e.data));
-         },
-         onerror: (e: ErrorEvent) => {
-           console.log('Error occurred: %s\n', debug(e.error));
-         },
-         onclose: (e: CloseEvent) => {
-           console.log('Connection closed.');
-         },
-       },
-     });
-     ```
-    */
+   @example
+   ```ts
+   let model: string;
+   if (GOOGLE_GENAI_USE_VERTEXAI) {
+   model = 'gemini-2.0-flash-live-preview-04-09';
+   } else {
+   model = 'gemini-2.0-flash-live-001';
+   }
+   const session = await ai.live.connect({
+   model: model,
+   config: {
+   responseModalities: [Modality.AUDIO],
+   },
+   callbacks: {
+   onopen: () => {
+   console.log('Connected to the socket.');
+   },
+   onmessage: (e: MessageEvent) => {
+   console.log('Received message from the server: %s\n', debug(e.data));
+   },
+   onerror: (e: ErrorEvent) => {
+   console.log('Error occurred: %s\n', debug(e.error));
+   },
+   onclose: (e: CloseEvent) => {
+   console.log('Connection closed.');
+   },
+   },
+   });
+   ```
+   */
   async connect(params: types.LiveConnectParameters): Promise<Session> {
     const websocketBaseUrl = this.apiClient.getWebsocketBaseUrl();
     const apiVersion = this.apiClient.getApiVersion();
@@ -150,20 +150,23 @@ export class Live {
       await this.auth.addAuthHeaders(headers);
     } else {
       const apiKey = this.apiClient.getApiKey();
+      if (apiKey) {
+        let method = 'BidiGenerateContent';
+        let keyName = 'key';
+        if (apiKey?.startsWith('auth_tokens/')) {
+          console.warn(
+            'Warning: Ephemeral token support is experimental and may change in future versions.',
+          );
+          method = 'BidiGenerateContentConstrained';
+          keyName = 'access_token';
+        }
 
-      let method = 'BidiGenerateContent';
-      let keyName = 'key';
-      if (apiKey?.startsWith('auth_tokens/')) {
-        console.warn(
-          'Warning: Ephemeral token support is experimental and may change in future versions.',
-        );
-        method = 'BidiGenerateContentConstrained';
-        keyName = 'access_token';
+        url = `${websocketBaseUrl}/ws/google.ai.generativelanguage.${
+          apiVersion
+        }.GenerativeService.${method}?${keyName}=${apiKey}`;
+      } else {
+        url = `${websocketBaseUrl}`;
       }
-
-      url = `${websocketBaseUrl}/ws/google.ai.generativelanguage.${
-        apiVersion
-      }.GenerativeService.${method}?${keyName}=${apiKey}`;
     }
 
     let onopenResolve: (value: unknown) => void = () => {};
@@ -282,10 +285,10 @@ const defaultLiveSendClientContentParamerters: types.LiveSendClientContentParame
   };
 
 /**
-   Represents a connection to the API.
+ Represents a connection to the API.
 
-   @experimental
-  */
+ @experimental
+ */
 export class Session {
   constructor(
     readonly conn: WebSocket,
@@ -363,53 +366,53 @@ export class Session {
   }
 
   /**
-    Send a message over the established connection.
+   Send a message over the established connection.
 
-    @param params - Contains two **optional** properties, `turns` and
-        `turnComplete`.
+   @param params - Contains two **optional** properties, `turns` and
+    `turnComplete`.
 
-      - `turns` will be converted to a `Content[]`
-      - `turnComplete: true` [default] indicates that you are done sending
-        content and expect a response. If `turnComplete: false`, the server
-        will wait for additional messages before starting generation.
+    - `turns` will be converted to a `Content[]`
+    - `turnComplete: true` [default] indicates that you are done sending
+    content and expect a response. If `turnComplete: false`, the server
+    will wait for additional messages before starting generation.
 
-    @experimental
+   @experimental
 
-    @remarks
-    There are two ways to send messages to the live API:
-    `sendClientContent` and `sendRealtimeInput`.
+   @remarks
+   There are two ways to send messages to the live API:
+   `sendClientContent` and `sendRealtimeInput`.
 
-    `sendClientContent` messages are added to the model context **in order**.
-    Having a conversation using `sendClientContent` messages is roughly
-    equivalent to using the `Chat.sendMessageStream`, except that the state of
-    the `chat` history is stored on the API server instead of locally.
+   `sendClientContent` messages are added to the model context **in order**.
+   Having a conversation using `sendClientContent` messages is roughly
+   equivalent to using the `Chat.sendMessageStream`, except that the state of
+   the `chat` history is stored on the API server instead of locally.
 
-    Because of `sendClientContent`'s order guarantee, the model cannot respons
-    as quickly to `sendClientContent` messages as to `sendRealtimeInput`
-    messages. This makes the biggest difference when sending objects that have
-    significant preprocessing time (typically images).
+   Because of `sendClientContent`'s order guarantee, the model cannot respons
+   as quickly to `sendClientContent` messages as to `sendRealtimeInput`
+   messages. This makes the biggest difference when sending objects that have
+   significant preprocessing time (typically images).
 
-    The `sendClientContent` message sends a `Content[]`
-    which has more options than the `Blob` sent by `sendRealtimeInput`.
+   The `sendClientContent` message sends a `Content[]`
+   which has more options than the `Blob` sent by `sendRealtimeInput`.
 
-    So the main use-cases for `sendClientContent` over `sendRealtimeInput` are:
+   So the main use-cases for `sendClientContent` over `sendRealtimeInput` are:
 
-    - Sending anything that can't be represented as a `Blob` (text,
-    `sendClientContent({turns="Hello?"}`)).
-    - Managing turns when not using audio input and voice activity detection.
-      (`sendClientContent({turnComplete:true})` or the short form
-    `sendClientContent()`)
-    - Prefilling a conversation context
-      ```
-      sendClientContent({
-          turns: [
-            Content({role:user, parts:...}),
-            Content({role:user, parts:...}),
-            ...
-          ]
-      })
-      ```
-    @experimental
+   - Sending anything that can't be represented as a `Blob` (text,
+   `sendClientContent({turns="Hello?"}`)).
+   - Managing turns when not using audio input and voice activity detection.
+   (`sendClientContent({turnComplete:true})` or the short form
+   `sendClientContent()`)
+   - Prefilling a conversation context
+   ```
+   sendClientContent({
+   turns: [
+   Content({role:user, parts:...}),
+   Content({role:user, parts:...}),
+   ...
+   ]
+   })
+   ```
+   @experimental
    */
   sendClientContent(params: types.LiveSendClientContentParameters) {
     params = {
@@ -425,26 +428,26 @@ export class Session {
   }
 
   /**
-    Send a realtime message over the established connection.
+   Send a realtime message over the established connection.
 
-    @param params - Contains one property, `media`.
+   @param params - Contains one property, `media`.
 
-      - `media` will be converted to a `Blob`
+    - `media` will be converted to a `Blob`
 
-    @experimental
+   @experimental
 
-    @remarks
-    Use `sendRealtimeInput` for realtime audio chunks and video frames (images).
+   @remarks
+   Use `sendRealtimeInput` for realtime audio chunks and video frames (images).
 
-    With `sendRealtimeInput` the api will respond to audio automatically
-    based on voice activity detection (VAD).
+   With `sendRealtimeInput` the api will respond to audio automatically
+   based on voice activity detection (VAD).
 
-    `sendRealtimeInput` is optimized for responsivness at the expense of
-    deterministic ordering guarantees. Audio and video tokens are to the
-    context when they become available.
+   `sendRealtimeInput` is optimized for responsivness at the expense of
+   deterministic ordering guarantees. Audio and video tokens are to the
+   context when they become available.
 
-    Note: The Call signature expects a `Blob` object, but only a subset
-    of audio and image mimetypes are allowed.
+   Note: The Call signature expects a `Blob` object, but only a subset
+   of audio and image mimetypes are allowed.
    */
   sendRealtimeInput(params: types.LiveSendRealtimeInputParameters) {
     let clientMessage: types.LiveClientMessage = {};
@@ -464,18 +467,18 @@ export class Session {
   }
 
   /**
-    Send a function response message over the established connection.
+   Send a function response message over the established connection.
 
-    @param params - Contains property `functionResponses`.
+   @param params - Contains property `functionResponses`.
 
-      - `functionResponses` will be converted to a `functionResponses[]`
+    - `functionResponses` will be converted to a `functionResponses[]`
 
-    @remarks
-    Use `sendFunctionResponse` to reply to `LiveServerToolCall` from the server.
+   @remarks
+   Use `sendFunctionResponse` to reply to `LiveServerToolCall` from the server.
 
-    Use {@link types.LiveConnectConfig#tools} to configure the callable functions.
+   Use {@link types.LiveConnectConfig#tools} to configure the callable functions.
 
-    @experimental
+   @experimental
    */
   sendToolResponse(params: types.LiveSendToolResponseParameters) {
     if (params.functionResponses == null) {
@@ -488,27 +491,27 @@ export class Session {
   }
 
   /**
-     Terminates the WebSocket connection.
+   Terminates the WebSocket connection.
 
-     @experimental
+   @experimental
 
-     @example
-     ```ts
-     let model: string;
-     if (GOOGLE_GENAI_USE_VERTEXAI) {
-       model = 'gemini-2.0-flash-live-preview-04-09';
-     } else {
-       model = 'gemini-2.0-flash-live-001';
-     }
-     const session = await ai.live.connect({
-       model: model,
-       config: {
-         responseModalities: [Modality.AUDIO],
-       }
-     });
+   @example
+   ```ts
+   let model: string;
+   if (GOOGLE_GENAI_USE_VERTEXAI) {
+   model = 'gemini-2.0-flash-live-preview-04-09';
+   } else {
+   model = 'gemini-2.0-flash-live-001';
+   }
+   const session = await ai.live.connect({
+   model: model,
+   config: {
+   responseModalities: [Modality.AUDIO],
+   }
+   });
 
-     session.close();
-     ```
+   session.close();
+   ```
    */
   close() {
     this.conn.close();

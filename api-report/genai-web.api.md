@@ -1336,6 +1336,7 @@ export class GoogleGenAI {
 // @public
 export interface GoogleGenAIOptions {
     apiKey?: string;
+    apiUrl?: string;
     apiVersion?: string;
     googleAuthOptions?: GoogleAuthOptions;
     httpOptions?: HttpOptions;

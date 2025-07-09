@@ -59,6 +59,12 @@ export interface ApiClientInitOptions {
    * If not provided, SDK will try to resolve it from runtime environment.
    */
   location?: string;
+
+  /**
+   * The API url. This is required for Gemini API users.
+   */
+  apiUrl?: string;
+
   /**
    * The API Key. This is required for Gemini API users.
    */
@@ -146,6 +152,7 @@ export class ApiClient {
       ...opts,
       project: opts.project,
       location: opts.location,
+      apiUrl: opts.apiUrl,
       apiKey: opts.apiKey,
       vertexai: opts.vertexai,
     };
@@ -161,7 +168,8 @@ export class ApiClient {
       // Gemini API
       initHttpOptions.apiVersion =
         this.clientOptions.apiVersion ?? GOOGLE_AI_API_DEFAULT_VERSION;
-      initHttpOptions.baseUrl = `https://generativelanguage.googleapis.com/`;
+      initHttpOptions.baseUrl =
+        opts.apiUrl ?? `https://generativelanguage.googleapis.com/`;
     }
 
     initHttpOptions.headers = this.getDefaultHeaders();
@@ -580,6 +588,7 @@ export class ApiClient {
       reader.releaseLock();
     }
   }
+
   private async apiCall(
     url: string,
     requestInit: RequestInit,

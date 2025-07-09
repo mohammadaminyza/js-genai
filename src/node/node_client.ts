@@ -68,6 +68,7 @@ const LANGUAGE_LABEL_PREFIX = 'gl-node/';
  */
 export class GoogleGenAI {
   protected readonly apiClient: ApiClient;
+  private readonly apiUrl: string;
   private readonly apiKey?: string;
   public readonly vertexai: boolean;
   private readonly googleAuthOptions?: GoogleAuthOptions;
@@ -94,10 +95,12 @@ export class GoogleGenAI {
 
     this.vertexai =
       options.vertexai ?? getBooleanEnv('GOOGLE_GENAI_USE_VERTEXAI') ?? false;
+    const envApiBaseUrl = getBaseApiUrlFromEnv();
     const envApiKey = getApiKeyFromEnv();
     const envProject = getEnv('GOOGLE_CLOUD_PROJECT');
     const envLocation = getEnv('GOOGLE_CLOUD_LOCATION');
 
+    this.apiUrl = options.apiUrl ?? envApiBaseUrl;
     this.apiKey = options.apiKey ?? envApiKey;
     this.project = options.project ?? envProject;
     this.location = options.location ?? envLocation;
@@ -161,6 +164,7 @@ export class GoogleGenAI {
       project: this.project,
       location: this.location,
       apiVersion: this.apiVersion,
+      apiUrl: this.apiUrl,
       apiKey: this.apiKey,
       vertexai: this.vertexai,
       httpOptions: options.httpOptions,
@@ -198,6 +202,17 @@ function stringToBoolean(str?: string): boolean {
 function getApiKeyFromEnv(): string | undefined {
   const envGoogleApiKey = getEnv('GOOGLE_API_KEY');
   const envGeminiApiKey = getEnv('GEMINI_API_KEY');
+  if (envGoogleApiKey && envGeminiApiKey) {
+    console.warn(
+      'Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.',
+    );
+  }
+  return envGoogleApiKey || envGeminiApiKey;
+}
+
+function getBaseApiUrlFromEnv(): string | undefined {
+  const envGoogleApiKey = getEnv('GOOGLE_BASE_API_URL');
+  const envGeminiApiKey = getEnv('GEMINI_BASE_API_URL');
   if (envGoogleApiKey && envGeminiApiKey) {
     console.warn(
       'Both GOOGLE_API_KEY and GEMINI_API_KEY are set. Using GOOGLE_API_KEY.',

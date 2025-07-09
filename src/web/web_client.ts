@@ -62,6 +62,7 @@ const LANGUAGE_LABEL_PREFIX = 'gl-node/';
  */
 export class GoogleGenAI {
   protected readonly apiClient: ApiClient;
+  private readonly apiUrl?: string;
   private readonly apiKey?: string;
   public readonly vertexai: boolean;
   private readonly apiVersion?: string;
@@ -76,7 +77,7 @@ export class GoogleGenAI {
   readonly tunings: Tunings;
 
   constructor(options: GoogleGenAIOptions) {
-    if (options.apiKey == null) {
+    if (options.apiKey == null && options.apiUrl == null) {
       throw new Error('An API Key must be set when running in a browser');
     }
     // Web client only supports API key mode for Vertex AI.
@@ -87,6 +88,7 @@ export class GoogleGenAI {
     }
     this.vertexai = options.vertexai ?? false;
 
+    this.apiUrl = options.apiUrl;
     this.apiKey = options.apiKey;
 
     const baseUrl = getBaseUrl(
@@ -103,10 +105,11 @@ export class GoogleGenAI {
     }
 
     this.apiVersion = options.apiVersion;
-    const auth = new WebAuth(this.apiKey);
+    const auth = new WebAuth(this.apiKey ?? 'NONE');
     this.apiClient = new ApiClient({
       auth: auth,
       apiVersion: this.apiVersion,
+      apiUrl: this.apiUrl,
       apiKey: this.apiKey,
       vertexai: this.vertexai,
       httpOptions: options.httpOptions,

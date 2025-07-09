@@ -58,6 +58,15 @@ export interface GoogleGenAIOptions {
    *
    */
   location?: string;
+
+  /**
+   * The API Url, required for Gemini API clients.
+   *
+   * @remarks
+   * Required on browser runtimes.
+   */
+  apiUrl: string;
+
   /**
    * The API Key, required for Gemini API clients.
    *
@@ -121,6 +130,7 @@ export interface GoogleGenAIOptions {
  */
 export class GoogleGenAI {
   protected readonly apiClient: ApiClient;
+  private readonly apiUrl: string;
   private readonly apiKey?: string;
   public readonly vertexai: boolean;
   private readonly apiVersion?: string;
@@ -141,12 +151,14 @@ export class GoogleGenAI {
       );
     }
     this.vertexai = options.vertexai ?? false;
+    this.apiUrl = options.apiUrl;
     this.apiKey = options.apiKey;
     this.apiVersion = options.apiVersion;
     const auth = new WebAuth(this.apiKey);
     this.apiClient = new ApiClient({
       auth: auth,
       apiVersion: this.apiVersion,
+      apiUrl: this.apiUrl,
       apiKey: this.apiKey,
       vertexai: this.vertexai,
       httpOptions: options.httpOptions,
